@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>INTO THE FOREST</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=Space+Mono&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#2d5a27;--lime:#7ab648;--gold:#c8a84b;
+  --dark:#060806;--text:#e8f0d8;--muted:rgba(232,240,216,.5);
+}
+html{scroll-behavior:auto}
+body{background:var(--dark);color:var(--text);font-family:'Cormorant Garamond',serif;overflow-x:hidden;cursor:none}
+
+#cur{position:fixed;width:10px;height:10px;border:1.5px solid var(--lime);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%)}
+#prog{position:fixed;top:0;left:0;height:2px;background:linear-gradient(90deg,var(--green),var(--lime));z-index:500;width:0}
+
+/* HERO */
+#hero{position:relative;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 60%,#0d1a0a 0%,#060806 70%);overflow:hidden}
+.h-eye{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.5em;color:var(--lime);text-transform:uppercase;opacity:0;animation:fu .8s .5s forwards}
+.h-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(4rem,20vw,16rem);line-height:.85;color:transparent;-webkit-text-stroke:1px rgba(122,182,72,.7);text-align:center;opacity:0;animation:fu 1s .7s forwards}
+.h-rule{width:0;height:1px;background:var(--lime);margin:.8rem auto;opacity:0;animation:exp 1s 1.3s forwards}
+.h-sub{font-style:italic;font-weight:300;font-size:clamp(.9rem,2vw,1.4rem);letter-spacing:.1em;color:var(--muted);opacity:0;animation:fu .9s 1.5s forwards}
+.scroll-hint{position:absolute;bottom:2.5rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.5rem;font-family:'Space Mono',monospace;font-size:.55rem;letter-spacing:.35em;color:rgba(122,182,72,.5);text-transform:uppercase;opacity:0;animation:fu .8s 2.2s forwards}
+.s-line{width:1px;height:44px;background:linear-gradient(var(--lime),transparent);animation:pulse 1.8s 2.2s ease-in-out infinite}
+
+/* STAGE */
+#stage-wrap{position:relative;height:600vh}
+#stage{position:sticky;top:0;height:100vh;overflow:hidden;background:#060806}
+#main-canvas{position:absolute;inset:0;width:100%;height:100%}
+
+/* Vignette */
+#vig{position:absolute;inset:0;pointer-events:none;z-index:10;background:radial-gradient(ellipse 75% 70% at 50% 50%,transparent 35%,rgba(4,8,4,.72) 100%)}
+
+/* Letterbox */
+#lt,#lb{position:absolute;left:0;right:0;background:#060806;z-index:20;height:0;transition:height .6s ease}
+#lt{top:0}#lb{bottom:0}
+.lbox #lt,.lbox #lb{height:8vh}
+
+/* Loader */
+#loader{position:absolute;inset:0;z-index:100;background:#060806;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .8s ease}
+#loader.done{opacity:0;pointer-events:none}
+.load-label{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.4em;color:var(--lime);text-transform:uppercase;margin-bottom:1.2rem}
+.load-bar-wrap{width:200px;height:2px;background:rgba(122,182,72,.2);border-radius:2px;overflow:hidden}
+.load-bar-inner{height:100%;background:linear-gradient(90deg,var(--green),var(--lime));width:0%;transition:width .1s linear}
+.load-pct{font-family:'Space Mono',monospace;font-size:.55rem;color:rgba(122,182,72,.6);margin-top:.8rem;letter-spacing:.2em}
+
+/* Chapters */
+#chapters{position:absolute;inset:0;z-index:30;pointer-events:none}
+.ch{position:absolute;inset:0;display:flex;flex-direction:column;padding:10vh 7vw;opacity:0;transform:translateY(14px);transition:opacity .7s ease,transform .7s ease}
+.ch.show{opacity:1;transform:translateY(0)}
+.ch.right{align-items:flex-end;text-align:right;justify-content:flex-end}
+.ch.center{align-items:center;text-align:center;justify-content:center}
+.ch.bottom{justify-content:flex-end}
+.ch-label{font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:.45em;color:var(--lime);text-transform:uppercase;margin-bottom:.5rem}
+.ch-big{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.8rem,9vw,8rem);line-height:.9;color:var(--text);text-shadow:0 2px 30px rgba(0,0,0,.95),0 0 60px rgba(0,0,0,.8)}
+.ch-big em{color:var(--lime);font-style:normal}
+.ch-body{font-weight:300;font-size:clamp(.85rem,1.7vw,1.15rem);line-height:1.75;color:rgba(232,240,216,.85);max-width:36ch;margin-top:.9rem;text-shadow:0 1px 12px rgba(0,0,0,.95)}
+.ch-stat{font-family:'Bebas Neue',sans-serif;font-size:clamp(5rem,16vw,13rem);line-height:1;color:transparent;-webkit-text-stroke:1px rgba(122,182,72,.35);position:absolute;right:5vw;bottom:8vh;pointer-events:none}
+
+/* OUTRO */
+#outro{position:relative;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 50%,#0d1a0a 0%,#060806 70%)}
+.ou-eye{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:.5em;color:var(--lime);text-transform:uppercase;opacity:0;transition:opacity 1s .2s}
+.ou-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.5rem,8vw,7rem);color:var(--text);letter-spacing:.05em;opacity:0;transform:translateY(20px);transition:opacity 1s .4s,transform 1s .4s}
+.ou-rule{width:60px;height:1px;background:var(--lime);margin:1.5rem auto;opacity:0;transition:opacity 1s .7s,width 1s .7s}
+.ou-body{font-style:italic;font-weight:300;font-size:clamp(.9rem,2vw,1.3rem);color:var(--muted);text-align:center;max-width:40ch;opacity:0;transition:opacity 1s .9s}
+#outro.vis .ou-eye,#outro.vis .ou-title,#outro.vis .ou-rule,#outro.vis .ou-body{opacity:1}
+#outro.vis .ou-title{transform:translateY(0)}
+#outro.vis .ou-rule{width:120px}
+
+@keyframes fu{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+@keyframes exp{from{width:0;opacity:0}to{width:120px;opacity:1}}
+@keyframes pulse{0%,100%{opacity:.3;transform:scaleY(.5)}50%{opacity:1;transform:scaleY(1)}}
+</style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="prog"></div>
+
+<!-- HERO -->
+<section id="hero">
+  <div style="position:relative;z-index:2;text-align:center">
+    <p class="h-eye">Drone Footage · 4K · Aerial</p>
+    <h1 class="h-title">INTO THE<br>FOREST</h1>
+    <div class="h-rule"></div>
+    <p class="h-sub">An aerial journey through ancient canopy</p>
+  </div>
+  <div class="scroll-hint"><div class="s-line"></div><span>Scroll</span></div>
+</section>
+
+<!-- STAGE -->
+<div id="stage-wrap">
+  <div id="stage">
+    <canvas id="main-canvas"></canvas>
+
+    <div id="loader">
+      <p class="load-label">Loading Footage</p>
+      <div class="load-bar-wrap"><div class="load-bar-inner" id="load-bar"></div></div>
+      <p class="load-pct" id="load-pct">0 / 137</p>
+    </div>
+
+    <div id="vig"></div>
+    <div id="lt"></div>
+    <div id="lb"></div>
+
+    <div id="chapters">
+      <div class="ch" id="c1">
+        <p class="ch-label">Chapter 01 — The Canopy</p>
+        <h2 class="ch-big">Above the<br><em>Ancient</em><br>Trees</h2>
+        <p class="ch-body">At altitude, the forest reveals itself as an endless ocean of green — a living, breathing system that has existed for millennia.</p>
+        <div class="ch-stat">01</div>
+      </div>
+      <div class="ch right" id="c2">
+        <p class="ch-label">Chapter 02 — The Road</p>
+        <h2 class="ch-big">A Path<br>Through<br><em>Wilderness</em></h2>
+        <p class="ch-body" style="max-width:32ch">The road cuts through — a reminder of two worlds existing side by side. Nature endures.</p>
+      </div>
+      <div class="ch center" id="c3">
+        <p class="ch-label">Chapter 03 — Light</p>
+        <h2 class="ch-big">Where<br><em>Light</em><br>Falls</h2>
+        <p class="ch-body" style="text-align:center;max-width:40ch">Shafts of light pierce the canopy — a cathedral built over thousands of years.</p>
+      </div>
+      <div class="ch bottom" id="c4">
+        <p class="ch-label">Chapter 04 — Depth</p>
+        <h2 class="ch-big">Going<br><em>Deeper</em></h2>
+        <p class="ch-body">The trees grow denser. Sound fades. The outside world disappears entirely.</p>
+      </div>
+      <div class="ch right" id="c5">
+        <p class="ch-label">Chapter 05 — Silence</p>
+        <h2 class="ch-big">The<br><em>Last</em><br>Wild<br>Places</h2>
+        <p class="ch-body" style="max-width:30ch">Forests cover 31% of Earth's land. We lose 15 billion trees every year.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OUTRO -->
+<section id="outro">
+  <p class="ou-eye">Aerial Documentary</p>
+  <h2 class="ou-title">The Forest Remembers</h2>
+  <div class="ou-rule"></div>
+  <p class="ou-body">Every frame above is real. Every tree is real.<br>Protect what remains.</p>
+</section>
+
+<script>
+/* CURSOR */
+const cur = document.getElementById('cur');
+document.addEventListener('mousemove', e => { cur.style.left=e.clientX+'px'; cur.style.top=e.clientY+'px'; });
+
+/* ═══ FRAME SCRUBBING ═══ */
+const TOTAL  = 137;
+const BASE   = 'https://raw.githubusercontent.com/arshaanxcodes/forest-scrollytelling/main/frame_';
+
+const canvas = document.getElementById('main-canvas');
+const ctx    = canvas.getContext('2d');
+const loader = document.getElementById('loader');
+const bar    = document.getElementById('load-bar');
+const pctEl  = document.getElementById('load-pct');
+
+const imgs   = [];
+let loaded   = 0;
+let ready    = false;
+let curFrame = 0;
+
+function resizeCanvas(){
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  drawFrame(curFrame);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function drawFrame(idx){
+  const img = imgs[idx];
+  if(!img || !img.complete || !img.naturalWidth) return;
+  const cw=canvas.width, ch=canvas.height;
+  const iw=img.naturalWidth, ih=img.naturalHeight;
+  const scale=Math.max(cw/iw, ch/ih);
+  const dw=iw*scale, dh=ih*scale;
+  ctx.clearRect(0,0,cw,ch);
+  ctx.drawImage(img,(cw-dw)/2,(ch-dh)/2,dw,dh);
+}
+
+// Preload frames — first 20 eagerly, rest lazily
+function preload(){
+  for(let i=1; i<=TOTAL; i++){
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    const num = String(i).padStart(4,'0');
+    img.src = BASE + num + '.jpg';
+    img.onload = () => {
+      loaded++;
+      const pct = Math.round(loaded/TOTAL*100);
+      bar.style.width = pct+'%';
+      pctEl.textContent = loaded+' / '+TOTAL;
+      if(loaded===1){ resizeCanvas(); drawFrame(0); }
+      if(loaded>=TOTAL){ ready=true; setTimeout(()=>loader.classList.add('done'),400); }
+    };
+    img.onerror = ()=>{ loaded++; };
+    imgs[i-1] = img;
+  }
+}
+preload();
+
+/* ═══ SCROLL ═══ */
+const stageWrap = document.getElementById('stage-wrap');
+const prog      = document.getElementById('prog');
+const stage     = document.getElementById('stage');
+
+const CHS = [
+  {id:'c1',from:.04,to:.22},
+  {id:'c2',from:.25,to:.42},
+  {id:'c3',from:.45,to:.62},
+  {id:'c4',from:.65,to:.80},
+  {id:'c5',from:.83,to:.97},
+];
+
+let lastP = -1;
+
+function tick(){
+  const rect  = stageWrap.getBoundingClientRect();
+  const total = stageWrap.offsetHeight - window.innerHeight;
+  const p     = Math.max(0, Math.min(1, -rect.top/total));
+
+  const pageTot = document.body.scrollHeight - window.innerHeight;
+  prog.style.width = (window.scrollY/pageTot*100)+'%';
+
+  if(Math.abs(p-lastP) > .0003){
+    lastP = p;
+
+    // Map scroll → frame
+    const fi = Math.min(TOTAL-1, Math.floor(p*(TOTAL-1)));
+    if(fi !== curFrame){
+      curFrame = fi;
+      drawFrame(fi);
+    }
+
+    // Letterbox
+    if(p>.06 && p<.94) stage.classList.add('lbox');
+    else stage.classList.remove('lbox');
+
+    // Chapters
+    CHS.forEach(c=>{
+      document.getElementById(c.id).classList.toggle('show', p>=c.from && p<c.to);
+    });
+  }
+
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+/* OUTRO */
+new IntersectionObserver(en=>{
+  en.forEach(e=>{ if(e.isIntersecting) document.getElementById('outro').classList.add('vis'); });
+},{threshold:.3}).observe(document.getElementById('outro'));
+</script>
+</body>
+</html>
